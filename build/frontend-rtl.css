@@ -1,0 +1,167 @@
+/*!**********************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./src/css/frontend.scss ***!
+  \**********************************************************************************************************************************************************************************************************************************************/
+@charset "UTF-8";
+/* ===========================================================
+   UD Reinigung – Frontend Styles (optimiert)
+   =========================================================== */
+/* ===========================================================
+   Modal Layout
+   =========================================================== */
+.ud-reinigung-modal-content {
+  max-width: 900px;
+  width: 95%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+/* ===========================================================
+   Hauptlayout: Sidebar + Content
+   =========================================================== */
+.ud-reinigung-ui {
+  display: flex;
+  flex: 1;
+  min-height: 60vh;
+}
+
+.ud-reinigung-sidebar {
+  width: 35%;
+  border-left: 1px solid #eee;
+  padding: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+.ud-reinigung-sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===========================================================
+   Rechte Spalte mit Aufgaben
+   =========================================================== */
+/* ===========================================================
+   Footer: Fortschritt + Bemerkungen
+   =========================================================== */
+.ud-reinigung-footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* ===========================================================
+   Reinigung Start Button – Fortschrittsring
+   =========================================================== */
+.ud-reinigung-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.6rem;
+  border: none;
+  border-radius: 9999px;
+  background: #fff;
+  color: #222;
+  font-weight: 600;
+  font-size: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.15s ease;
+}
+.ud-reinigung-button .ud-reinigung-progress-ring {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+}
+.ud-reinigung-button .ud-reinigung-progress-ring svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(90deg);
+}
+.ud-reinigung-button .ud-reinigung-progress-ring circle {
+  fill: none;
+  stroke-width: 3.5;
+  transition: stroke-dashoffset 0.4s ease, stroke 0.4s ease;
+}
+.ud-reinigung-button .ud-reinigung-progress-ring .bg {
+  stroke: #e7e7e7;
+}
+.ud-reinigung-button .ud-reinigung-progress-ring .progress {
+  stroke: #11863a;
+  stroke-linecap: round;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+}
+.ud-reinigung-button .ud-reinigung-button-content {
+  display: flex;
+  flex-direction: column;
+}
+.ud-reinigung-button .ud-reinigung-button-content .progress-text {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: #666;
+}
+.ud-reinigung-button:hover {
+  background: #f8f8f8;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+.ud-reinigung-button:active {
+  transform: scale(0.97);
+}
+.ud-reinigung-button.loading {
+  opacity: 0.6;
+  pointer-events: none;
+}
+.ud-reinigung-button.loading .progress {
+  animation: udRotate 1.2s linear infinite;
+  stroke-dasharray: 25 75;
+  stroke: #bbb !important;
+}
+
+@keyframes udRotate {
+  to {
+    transform: rotate(-360deg);
+  }
+}
+.ud-button-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 5vw;
+}
+
+/* ===========================================================
+   Sonstiges
+   =========================================================== */
+.wp-block-post-title {
+  display: none;
+}
+
+.ud-toast {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  padding: 10px 16px;
+  font-size: 14px;
+  opacity: 0;
+  transform: translateY(20px);
+  z-index: 2000;
+}
+.ud-toast--visible {
+  opacity: 1;
+  transform: translateY(0);
+}

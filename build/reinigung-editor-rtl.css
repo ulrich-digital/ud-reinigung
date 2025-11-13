@@ -1,0 +1,36 @@
+/*!******************************************************************************************************************************************************************************************************************************************************!*\
+  !*** css ./node_modules/css-loader/dist/cjs.js??ruleSet[1].rules[4].use[1]!./node_modules/postcss-loader/dist/cjs.js??ruleSet[1].rules[4].use[2]!./node_modules/sass-loader/dist/cjs.js??ruleSet[1].rules[4].use[3]!./src/css/reinigung-editor.scss ***!
+  \******************************************************************************************************************************************************************************************************************************************************/
+.ud-reinigung-panel .components-panel__body {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #fafafa;
+}
+.ud-reinigung-panel .components-panel__body .components-panel__body-title {
+  font-weight: 600;
+  font-size: 13px;
+}
+.ud-reinigung-panel .components-base-control + .components-base-control {
+  margin-top: 6px;
+}
+.ud-reinigung-panel .ud-reinigung-toolbar {
+  margin: 6px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ud-reinigung-panel .ud-reinigung-toolbar button {
+  font-size: 12px;
+  font-weight: 500;
+}
+.ud-reinigung-panel .ud-reinigung-toolbar span {
+  font-size: 11.5px;
+  color: #666;
+}
+.ud-reinigung-panel textarea.components-textarea-control__input {
+  font-size: 13px;
+  line-height: 1.5;
+  min-height: 90px;
+  resize: vertical;
+}
