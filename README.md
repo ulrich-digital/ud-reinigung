@@ -1,7 +1,6 @@
 # UD Plugin: Reinigung
 
-Digitales Reinigungssystem für Küchen, Räume oder Geräte mit Echtzeit-Status, Aufgabenverwaltung und übersichtlicher Darstellung im Frontend.
-Entwickelt für den Einsatz in Produktions- oder Gastronomiebetrieben, um Reinigungsabläufe einfach, transparent und live nachvollziehbar zu machen.
+Digitales Werkzeug für Reinigungsaufgaben in Küchen, Räumen oder Arbeitsbereichen. Es zeigt den Fortschritt in Echtzeit und ermöglicht das einfache Abhaken direkt im Frontend.
 
 ## Funktionen
 
