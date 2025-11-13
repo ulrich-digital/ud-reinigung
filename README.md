@@ -29,6 +29,8 @@ _Der Button zur Reinigung zeigt den aktuellen Fortschritt – erledigte und offe
 ![Editor-Ansicht](./assets/ud-reinigung_erfassen.webp)
 _Erfassung und Kontrolle der Reinigungsaufgaben – Räume und Arbeitsschritte können direkt abgehakt und kommentiert werden._
 
+## Voraussetzung:
+Das Plugin UD Reservation[UD Reservation](https://github.com/ulrich-digital/ud-reservation) muss aktiv sein, da UD Reinigung dessen Echtzeit-Infrastruktur (Ably-Verbindung und gemeinsame Helper-Funktionen) nutzt.
 
 
 ## Installation
