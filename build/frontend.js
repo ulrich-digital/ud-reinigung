@@ -12,6 +12,66 @@ __webpack_require__.r(__webpack_exports__);
 // extracted by mini-css-extract-plugin
 
 
+/***/ }),
+
+/***/ "./src/js/helpers/confirm.js":
+/*!***********************************!*\
+  !*** ./src/js/helpers/confirm.js ***!
+  \***********************************/
+/***/ ((__unused_webpack_module, __webpack_exports__, __webpack_require__) => {
+
+__webpack_require__.r(__webpack_exports__);
+/* harmony export */ __webpack_require__.d(__webpack_exports__, {
+/* harmony export */   udConfirm: () => (/* binding */ udConfirm)
+/* harmony export */ });
+// confirm.js
+let udConfirmModal = null;
+function udConfirm(message, title = "Bestätigen", options = {}) {
+  return new Promise(() => {
+    let modal = document.querySelector(".ud-confirm-backdrop");
+    if (!modal) {
+      const html = `
+            <div class="ud-confirm-backdrop">
+                <div class="ud-confirm-box">
+                    <h3 class="ud-confirm-title"></h3>
+                    <p class="ud-confirm-message"></p>
+                    <div class="ud-confirm-actions">
+                        <button class="ud-confirm-cancel"></button>
+                        <button class="ud-confirm-ok"></button>
+                    </div>
+                </div>
+            </div>`;
+      document.body.insertAdjacentHTML("beforeend", html);
+      modal = document.querySelector(".ud-confirm-backdrop");
+    }
+    const titleEl = modal.querySelector(".ud-confirm-title");
+    const msgEl = modal.querySelector(".ud-confirm-message");
+    const okBtn = modal.querySelector(".ud-confirm-ok");
+    const cancelBtn = modal.querySelector(".ud-confirm-cancel");
+
+    // 🔥 Standardtexte definieren je nach Kontext
+    const okLabel = options.okLabel || "OK";
+    const cancelLabel = options.cancelLabel || "Abbrechen";
+    okBtn.textContent = okLabel;
+    cancelBtn.textContent = cancelLabel;
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    modal.style.display = "flex";
+
+    // Klick-Handler zurücksetzen
+    okBtn.onclick = null;
+    cancelBtn.onclick = null;
+    okBtn.onclick = () => {
+      modal.style.display = "none";
+      options.onSave?.();
+    };
+    cancelBtn.onclick = () => {
+      modal.style.display = "none";
+      options.onDiscard?.();
+    };
+  });
+}
+
 /***/ })
 
 /******/ 	});
@@ -41,6 +101,23 @@ __webpack_require__.r(__webpack_exports__);
 /******/ 	}
 /******/ 	
 /************************************************************************/
+/******/ 	/* webpack/runtime/define property getters */
+/******/ 	(() => {
+/******/ 		// define getter functions for harmony exports
+/******/ 		__webpack_require__.d = (exports, definition) => {
+/******/ 			for(var key in definition) {
+/******/ 				if(__webpack_require__.o(definition, key) && !__webpack_require__.o(exports, key)) {
+/******/ 					Object.defineProperty(exports, key, { enumerable: true, get: definition[key] });
+/******/ 				}
+/******/ 			}
+/******/ 		};
+/******/ 	})();
+/******/ 	
+/******/ 	/* webpack/runtime/hasOwnProperty shorthand */
+/******/ 	(() => {
+/******/ 		__webpack_require__.o = (obj, prop) => (Object.prototype.hasOwnProperty.call(obj, prop))
+/******/ 	})();
+/******/ 	
 /******/ 	/* webpack/runtime/make namespace object */
 /******/ 	(() => {
 /******/ 		// define __esModule on exports
@@ -61,6 +138,8 @@ var __webpack_exports__ = {};
   \****************************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var _css_frontend_scss__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../css/frontend.scss */ "./src/css/frontend.scss");
+/* harmony import */ var _helpers_confirm__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./helpers/confirm */ "./src/js/helpers/confirm.js");
+
 
 
 // ===========================================================
@@ -96,41 +175,85 @@ function initUDReinigung() {
   // ===========================================================
   // 🔹 Datumshandling
   // ===========================================================
-  //	const dateInput = document.querySelector("#reservation-date");
-  const dateInput = document.querySelector("#reservation-date-flatpickr");
-  const currentDate = dateInput?.value || new Date().toISOString().slice(0, 10);
+  // ===========================================================
+  // 🔹 Datumshandling
+  // ===========================================================
+  // versucht aktuelles Datum aus dem Flatpickr-Input zu lesen
+  const initialDateInput = document.querySelector("#reservation-date-flatpickr");
+  const currentDate = initialDateInput?.value || new Date().toISOString().slice(0, 10);
   button.dataset.date = currentDate;
 
   // Beim Laden sofort Fortschritt holen
   loadProgress(currentDate);
 
-  // 🔸 Datumsauswahl überwachen → Fortschritt neu laden
-  if (dateInput) {
-    dateInput.addEventListener("change", e => {
-      const newDate = e.target.value;
-      button.dataset.date = newDate;
-      loadProgress(newDate);
+  // 🔸 Datumsauswahl überwachen → Fortschritt neu laden (delegiert)
+  document.addEventListener("change", e => {
+    const target = e.target;
+    if (!target || !(target instanceof HTMLInputElement)) return;
+    if (target.id !== "reservation-date-flatpickr") return;
+    const newDate = target.value;
+    console.log("[UD-Reinigung] Datum geändert:", newDate);
+    if (!newDate) return;
+    button.dataset.date = newDate;
+    loadProgress(newDate);
+  });
+
+  // ===========================================================
+  // 🔹 Globale Schließen-Handler – nur EINMAL registrieren
+  // ===========================================================
+  (function registerCloseHandlers() {
+    const modal = document.querySelector("#ud-reinigung-modal");
+    if (!modal) return;
+    const backdrop = modal.querySelector(".ud-reinigung-modal-backdrop");
+    const closeBtn = modal.querySelector(".ud-reinigung-modal-close");
+    const cancelBtn = modal.querySelector("#cancel-reinigung");
+
+    // Backdrop & X
+    [backdrop, closeBtn].forEach(el => {
+      el?.addEventListener("click", async () => {
+        const modal = document.querySelector("#ud-reinigung-modal");
+        if (!modal?.udReinigungData) {
+          return closeModal(true);
+        }
+        if (hasUnsavedChanges(modal)) {
+          await confirmClose(); // 🔥 wartet auf udConfirm
+        } else {
+          closeModal(true);
+        }
+      });
     });
-  }
+
+    // Abbrechen-Button im Modal
+    cancelBtn.addEventListener("click", async e => {
+      e.preventDefault();
+      if (hasUnsavedChanges(modal)) {
+        await confirmClose(); // 🔥 jetzt korrekt
+      } else {
+        closeModal(true);
+      }
+    });
+  })();
 
   // ===========================================================
   // 🔹 Klick öffnet Modal
   // ===========================================================
-  document.addEventListener("click", async e => {
-    const target = e.target.closest("#ud-start-reinigung");
-    if (!target) return;
-    const dateInput = document.querySelector("#reservation-date");
+  button.addEventListener("click", async e => {
+    //    const dateInput = document.querySelector("#reservation-date");
+    const dateInput = document.querySelector("#reservation-date-flatpickr");
     const date = dateInput?.value || new Date().toISOString().slice(0, 10);
-    target.dataset.date = date;
+    button.dataset.date = date; // ← target ➜ button
+
     const modal = document.querySelector("#ud-reinigung-modal");
     if (!modal) return console.warn("⚠️ UD Reinigung: Modal nicht gefunden!");
     const backdrop = modal.querySelector(".ud-reinigung-modal-backdrop");
     const closeBtn = modal.querySelector(".ud-reinigung-modal-close");
     const loader = modal.querySelector("#ud-reinigung-loading");
     const checklistContainer = modal.querySelector("#ud-reinigung-checklisten");
-    target.classList.add("loading");
-    const labelEl = target.querySelector(".label");
-    if (labelEl) labelEl.textContent = "Reinigung starten";
+
+    // ← target ➜ button
+    button.classList.add("loading");
+    const labelEl = button.querySelector(".label");
+    if (labelEl) labelEl.textContent = "Reinigung";
 
     // ===========================================================
     // 🔹 Suppentag prüfen oder erstellen
@@ -141,18 +264,6 @@ function initUDReinigung() {
       const dataSuppen = await resSuppen.json();
       if (!dataSuppen?.id) {
         console.log("ℹ️ Kein Suppentag vorhanden – wird erstellt …");
-        const createRes = await fetch("/wp-json/ud-suppentag/v1/create", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            date
-          })
-        });
-        const newSuppen = await createRes.json();
-        suppentagId = newSuppen?.id;
-        console.log("🆕 Suppentag erstellt:", suppentagId);
       } else {
         suppentagId = dataSuppen.id;
         console.log("📄 Suppentag gefunden:", suppentagId);
@@ -175,7 +286,8 @@ function initUDReinigung() {
       console.error("❌ Fehler beim Laden der Reinigung:", err);
       checklistContainer.innerHTML = "<p>Fehler beim Laden der Reinigung.</p>";
     } finally {
-      target.classList.remove("loading");
+      // ← target ➜ button
+      button.classList.remove("loading");
       loader.hidden = true;
       checklistContainer.hidden = false;
     }
@@ -183,12 +295,6 @@ function initUDReinigung() {
     // Modal öffnen
     modal.removeAttribute("hidden");
     document.body.style.overflow = "hidden";
-
-    // Schließen-Handler
-    [backdrop, closeBtn].forEach(el => el?.addEventListener("click", closeModal));
-    document.addEventListener("keydown", e => {
-      if (e.key === "Escape" && !modal.hasAttribute("hidden")) closeModal();
-    });
   });
 
   // ===========================================================
@@ -250,11 +356,13 @@ function initUDReinigung() {
       checklisten,
       bemerkungen
     } = data;
+    //modal.udReinigungData = { postId, checklisten, container, date };
     modal.udReinigungData = {
       postId,
       checklisten,
       container,
-      date
+      date,
+      original: JSON.stringify(checklisten) // 🔥 Originalzustand speichern
     };
     const ui = document.createElement("div");
     ui.className = "ud-reinigung-ui";
@@ -340,21 +448,91 @@ function initUDReinigung() {
     }
     renderSidebar();
     renderTasks(activeBereich);
+
+    // Am Ende von renderReinigungUI:
+
+    const saveBtn = modal.querySelector("#save-reinigung");
+    if (saveBtn) {
+      saveBtn.onclick = async () => {
+        // statt addEventListener → überschreibt alte Listener
+        const data = modal.udReinigungData;
+        if (!data) return;
+        modal.dataset.savedByButton = "1";
+        showToast("Speichere Reinigung ...");
+        await saveReinigung(data.postId, data.checklisten, modal.querySelector("#ud-reinigung-checklisten"),
+        // ⬅ immer frisch holen
+        data.date, false);
+
+        //showToast("Reinigung gespeichert!");
+
+        await loadProgress(data.date);
+        modal.setAttribute("hidden", "");
+        document.body.style.overflow = "";
+      };
+    }
+  }
+
+  /* =============================================================== *\
+    Title
+  \* =============================================================== */
+  function hasUnsavedChanges(modal) {
+    if (!modal || !modal.udReinigungData) return false;
+    const {
+      checklisten,
+      original
+    } = modal.udReinigungData;
+    return JSON.stringify(checklisten) !== original;
+  }
+  function confirmClose() {
+    const modal = document.querySelector("#ud-reinigung-modal");
+    if (!modal || !modal.udReinigungData) {
+      console.error("❌ confirmClose konnte Modal-Daten nicht finden");
+      return closeModal(true);
+    }
+    const {
+      postId,
+      checklisten,
+      container,
+      date
+    } = modal.udReinigungData;
+    (0,_helpers_confirm__WEBPACK_IMPORTED_MODULE_1__.udConfirm)("Du hast Änderungen vorgenommen. Möchtest du speichern?", "Änderungen vorhanden", {
+      okLabel: "Speichern",
+      cancelLabel: "Nicht speichern",
+      onSave: async () => {
+        await saveReinigung(postId, checklisten, container, date, true);
+        closeModal(true);
+      },
+      onDiscard: () => {
+        closeModal(true);
+      }
+    });
   }
 
   // ===========================================================
-  // 🔹 Schliessen → automatisch speichern
+  // 🔹 Schliessen
   // ===========================================================
-  async function closeModal() {
+  function closeModal() {
     const modal = document.querySelector("#ud-reinigung-modal");
     if (!modal) return;
+
+    // Wenn Modal bereits geschlossen oder kein State → einfach zu
     const data = modal.udReinigungData;
-    if (data && typeof saveReinigung === "function") {
-      showToast("Speichere Reinigung ...");
-      await saveReinigung(data.postId, data.checklisten, data.container, data.date, false);
-      showToast("Reinigung gespeichert!");
-      await loadProgress(data.date);
+    if (!data) {
+      modal.setAttribute("hidden", "");
+      document.body.style.overflow = "";
+      return;
     }
+
+    // Wenn durch Speichern-Button geschlossen → KEINE Aktion
+    if (modal.dataset.savedByButton === "1") {
+      modal.dataset.savedByButton = "0"; // zurücksetzen
+      modal.setAttribute("hidden", "");
+      document.body.style.overflow = "";
+      return;
+    }
+
+    // ❗️KEIN Speichern mehr!
+    // ❗️Nur Modal schliessen.
     modal.setAttribute("hidden", "");
     document.body.style.overflow = "";
   }

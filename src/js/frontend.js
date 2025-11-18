@@ -1,4 +1,5 @@
 import "../css/frontend.scss";
+import { udConfirm } from "./helpers/confirm";
 
 // ===========================================================
 // 🔹 Initialisierung
@@ -36,64 +37,113 @@ function initUDReinigung() {
 	// ===========================================================
 	// 🔹 Datumshandling
 	// ===========================================================
-//	const dateInput = document.querySelector("#reservation-date");
-	const dateInput = document.querySelector("#reservation-date-flatpickr");
-	const currentDate = dateInput?.value || new Date().toISOString().slice(0, 10);
+	// ===========================================================
+	// 🔹 Datumshandling
+	// ===========================================================
+	// versucht aktuelles Datum aus dem Flatpickr-Input zu lesen
+	const initialDateInput = document.querySelector(
+		"#reservation-date-flatpickr"
+	);
+	const currentDate =
+		initialDateInput?.value || new Date().toISOString().slice(0, 10);
+
 	button.dataset.date = currentDate;
 
 	// Beim Laden sofort Fortschritt holen
 	loadProgress(currentDate);
 
-	// 🔸 Datumsauswahl überwachen → Fortschritt neu laden
-	if (dateInput) {
-		dateInput.addEventListener("change", (e) => {
-			const newDate = e.target.value;
-			button.dataset.date = newDate;
-			loadProgress(newDate);
+	// 🔸 Datumsauswahl überwachen → Fortschritt neu laden (delegiert)
+	document.addEventListener("change", (e) => {
+		const target = e.target;
+		if (!target || !(target instanceof HTMLInputElement)) return;
+		if (target.id !== "reservation-date-flatpickr") return;
+
+		const newDate = target.value;
+		console.log("[UD-Reinigung] Datum geändert:", newDate);
+		if (!newDate) return;
+
+		button.dataset.date = newDate;
+		loadProgress(newDate);
+	});
+
+	// ===========================================================
+	// 🔹 Globale Schließen-Handler – nur EINMAL registrieren
+	// ===========================================================
+	(function registerCloseHandlers() {
+		const modal = document.querySelector("#ud-reinigung-modal");
+		if (!modal) return;
+
+		const backdrop = modal.querySelector(".ud-reinigung-modal-backdrop");
+		const closeBtn = modal.querySelector(".ud-reinigung-modal-close");
+		const cancelBtn = modal.querySelector("#cancel-reinigung");
+
+		// Backdrop & X
+		[backdrop, closeBtn].forEach((el) => {
+			el?.addEventListener("click", async () => {
+				const modal = document.querySelector("#ud-reinigung-modal");
+				if (!modal?.udReinigungData) {
+					return closeModal(true);
+				}
+
+				if (hasUnsavedChanges(modal)) {
+					await confirmClose(); // 🔥 wartet auf udConfirm
+				} else {
+					closeModal(true);
+				}
+			});
 		});
-	}
+
+		// Abbrechen-Button im Modal
+		cancelBtn.addEventListener("click", async (e) => {
+			e.preventDefault();
+
+			if (hasUnsavedChanges(modal)) {
+				await confirmClose(); // 🔥 jetzt korrekt
+			} else {
+				closeModal(true);
+			}
+		});
+	})();
 
 	// ===========================================================
 	// 🔹 Klick öffnet Modal
 	// ===========================================================
-	document.addEventListener("click", async (e) => {
-		const target = e.target.closest("#ud-start-reinigung");
-		if (!target) return;
+	button.addEventListener("click", async (e) => {
+		//    const dateInput = document.querySelector("#reservation-date");
+		const dateInput = document.querySelector("#reservation-date-flatpickr");
 
-		const dateInput = document.querySelector("#reservation-date");
 		const date = dateInput?.value || new Date().toISOString().slice(0, 10);
-		target.dataset.date = date;
+
+		button.dataset.date = date; // ← target ➜ button
 
 		const modal = document.querySelector("#ud-reinigung-modal");
-		if (!modal) return console.warn("⚠️ UD Reinigung: Modal nicht gefunden!");
+		if (!modal)
+			return console.warn("⚠️ UD Reinigung: Modal nicht gefunden!");
 
 		const backdrop = modal.querySelector(".ud-reinigung-modal-backdrop");
 		const closeBtn = modal.querySelector(".ud-reinigung-modal-close");
 		const loader = modal.querySelector("#ud-reinigung-loading");
-		const checklistContainer = modal.querySelector("#ud-reinigung-checklisten");
+		const checklistContainer = modal.querySelector(
+			"#ud-reinigung-checklisten"
+		);
 
-		target.classList.add("loading");
-		const labelEl = target.querySelector(".label");
-		if (labelEl) labelEl.textContent = "Reinigung starten";
+		// ← target ➜ button
+		button.classList.add("loading");
+		const labelEl = button.querySelector(".label");
+		if (labelEl) labelEl.textContent = "Reinigung";
 
 		// ===========================================================
 		// 🔹 Suppentag prüfen oder erstellen
 		// ===========================================================
 		let suppentagId = null;
 		try {
-			const resSuppen = await fetch(`/wp-json/ud-suppentag/v1/by-date?date=${date}`);
+			const resSuppen = await fetch(
+				`/wp-json/ud-suppentag/v1/by-date?date=${date}`
+			);
 			const dataSuppen = await resSuppen.json();
 
 			if (!dataSuppen?.id) {
 				console.log("ℹ️ Kein Suppentag vorhanden – wird erstellt …");
-				const createRes = await fetch("/wp-json/ud-suppentag/v1/create", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ date }),
-				});
-				const newSuppen = await createRes.json();
-				suppentagId = newSuppen?.id;
-				console.log("🆕 Suppentag erstellt:", suppentagId);
 			} else {
 				suppentagId = dataSuppen.id;
 				console.log("📄 Suppentag gefunden:", suppentagId);
@@ -106,18 +156,24 @@ function initUDReinigung() {
 		// 🔹 Reinigung laden
 		// ===========================================================
 		try {
-			const res = await fetch(`/wp-json/ud-reinigung/v1/clean?date=${date}&_t=${Date.now()}`, {
-				cache: "no-store",
-			});
+			const res = await fetch(
+				`/wp-json/ud-reinigung/v1/clean?date=${date}&_t=${Date.now()}`,
+				{
+					cache: "no-store",
+				}
+			);
 			const data = await res.json();
 
-			if (!data.checklisten) throw new Error("Keine Checklisten erhalten.");
+			if (!data.checklisten)
+				throw new Error("Keine Checklisten erhalten.");
 			renderReinigungUI(data, modal, date);
 		} catch (err) {
 			console.error("❌ Fehler beim Laden der Reinigung:", err);
-			checklistContainer.innerHTML = "<p>Fehler beim Laden der Reinigung.</p>";
+			checklistContainer.innerHTML =
+				"<p>Fehler beim Laden der Reinigung.</p>";
 		} finally {
-			target.classList.remove("loading");
+			// ← target ➜ button
+			button.classList.remove("loading");
 			loader.hidden = true;
 			checklistContainer.hidden = false;
 		}
@@ -125,12 +181,6 @@ function initUDReinigung() {
 		// Modal öffnen
 		modal.removeAttribute("hidden");
 		document.body.style.overflow = "hidden";
-
-		// Schließen-Handler
-		[backdrop, closeBtn].forEach((el) => el?.addEventListener("click", closeModal));
-		document.addEventListener("keydown", (e) => {
-			if (e.key === "Escape" && !modal.hasAttribute("hidden")) closeModal();
-		});
 	});
 
 	// ===========================================================
@@ -139,9 +189,12 @@ function initUDReinigung() {
 	async function loadProgress(date) {
 		console.log("⏳ Lade Fortschritt für Datum:", date);
 		try {
-			const res = await fetch(`/wp-json/ud-reinigung/v1/clean?date=${date}&_t=${Date.now()}`, {
-				cache: "no-store",
-			});
+			const res = await fetch(
+				`/wp-json/ud-reinigung/v1/clean?date=${date}&_t=${Date.now()}`,
+				{
+					cache: "no-store",
+				}
+			);
 			const data = await res.json();
 
 			if (!data || !data.checklisten) {
@@ -170,7 +223,9 @@ function initUDReinigung() {
 	// ===========================================================
 	function updateButtonProgress(checklisten, done, total) {
 		const percent = total > 0 ? (done / total) * 100 : 0;
-		const textEl = document.querySelector("#ud-start-reinigung .progress-text");
+		const textEl = document.querySelector(
+			"#ud-start-reinigung .progress-text"
+		);
 		if (textEl) textEl.textContent = `${done} von ${total} erledigt`;
 
 		const circle = document.querySelector("#ud-start-reinigung .progress");
@@ -195,7 +250,14 @@ function initUDReinigung() {
 		container.innerHTML = "";
 
 		const { id: postId, checklisten, bemerkungen } = data;
-		modal.udReinigungData = { postId, checklisten, container, date };
+		//modal.udReinigungData = { postId, checklisten, container, date };
+		modal.udReinigungData = {
+			postId,
+			checklisten,
+			container,
+			date,
+			original: JSON.stringify(checklisten), // 🔥 Originalzustand speichern
+		};
 
 		const ui = document.createElement("div");
 		ui.className = "ud-reinigung-ui";
@@ -217,7 +279,9 @@ function initUDReinigung() {
 		remarksSection.className = "ud-checklist-section";
 		remarksSection.innerHTML = `
 			<h3>Bemerkungen</h3>
-			<textarea id="ud-reinigung-bemerkungen" rows="4" placeholder="Bemerkungen eintragen...">${bemerkungen || ""}</textarea>
+			<textarea id="ud-reinigung-bemerkungen" rows="4" placeholder="Bemerkungen eintragen...">${
+				bemerkungen || ""
+			}</textarea>
 		`;
 		container.appendChild(remarksSection);
 
@@ -291,30 +355,110 @@ function initUDReinigung() {
 				done += Object.values(aufgaben).filter(Boolean).length;
 			});
 
-			const footerProgress = container.querySelector("#ud-reinigung-progress");
-			if (footerProgress) footerProgress.textContent = `${done} von ${total} erledigt`;
+			const footerProgress = container.querySelector(
+				"#ud-reinigung-progress"
+			);
+			if (footerProgress)
+				footerProgress.textContent = `${done} von ${total} erledigt`;
 			updateButtonProgress(checklisten, done, total);
 		}
 
 		renderSidebar();
 		renderTasks(activeBereich);
+
+		// Am Ende von renderReinigungUI:
+
+		const saveBtn = modal.querySelector("#save-reinigung");
+		if (saveBtn) {
+			saveBtn.onclick = async () => {
+				// statt addEventListener → überschreibt alte Listener
+				const data = modal.udReinigungData;
+				if (!data) return;
+
+				modal.dataset.savedByButton = "1";
+				showToast("Speichere Reinigung ...");
+
+				await saveReinigung(
+					data.postId,
+					data.checklisten,
+					modal.querySelector("#ud-reinigung-checklisten"), // ⬅ immer frisch holen
+					data.date,
+					false
+				);
+
+				//showToast("Reinigung gespeichert!");
+
+				await loadProgress(data.date);
+
+				modal.setAttribute("hidden", "");
+				document.body.style.overflow = "";
+			};
+		}
 	}
 
+	/* =============================================================== *\
+   Title
+\* =============================================================== */
+	function hasUnsavedChanges(modal) {
+		if (!modal || !modal.udReinigungData) return false;
+
+		const { checklisten, original } = modal.udReinigungData;
+		return JSON.stringify(checklisten) !== original;
+	}
+
+function confirmClose() {
+    const modal = document.querySelector("#ud-reinigung-modal");
+    if (!modal || !modal.udReinigungData) {
+        console.error("❌ confirmClose konnte Modal-Daten nicht finden");
+        return closeModal(true);
+    }
+
+    const { postId, checklisten, container, date } = modal.udReinigungData;
+
+    udConfirm(
+        "Du hast Änderungen vorgenommen. Möchtest du speichern?",
+        "Änderungen vorhanden",
+        {
+
+    okLabel: "Speichern",
+    cancelLabel: "Nicht speichern",
+            onSave: async () => {
+                await saveReinigung(postId, checklisten, container, date, true);
+                closeModal(true);
+            },
+            onDiscard: () => {
+                closeModal(true);
+            }
+        }
+    );
+}
+
+
 	// ===========================================================
-	// 🔹 Schliessen → automatisch speichern
+	// 🔹 Schliessen
 	// ===========================================================
-	async function closeModal() {
+	function closeModal() {
 		const modal = document.querySelector("#ud-reinigung-modal");
 		if (!modal) return;
 
+		// Wenn Modal bereits geschlossen oder kein State → einfach zu
 		const data = modal.udReinigungData;
-		if (data && typeof saveReinigung === "function") {
-			showToast("Speichere Reinigung ...");
-			await saveReinigung(data.postId, data.checklisten, data.container, data.date, false);
-			showToast("Reinigung gespeichert!");
-			await loadProgress(data.date);
+		if (!data) {
+			modal.setAttribute("hidden", "");
+			document.body.style.overflow = "";
+			return;
 		}
 
+		// Wenn durch Speichern-Button geschlossen → KEINE Aktion
+		if (modal.dataset.savedByButton === "1") {
+			modal.dataset.savedByButton = "0"; // zurücksetzen
+			modal.setAttribute("hidden", "");
+			document.body.style.overflow = "";
+			return;
+		}
+
+		// ❗️KEIN Speichern mehr!
+		// ❗️Nur Modal schliessen.
 		modal.setAttribute("hidden", "");
 		document.body.style.overflow = "";
 	}
@@ -322,9 +466,17 @@ function initUDReinigung() {
 	// ===========================================================
 	// 🔹 REST-POST: gesamte Reinigung speichern
 	// ===========================================================
-	async function saveReinigung(postId, checklisten, container, date, showToastMsg = true) {
+	async function saveReinigung(
+		postId,
+		checklisten,
+		container,
+		date,
+		showToastMsg = true
+	) {
 		const bemerkungen =
-			container.querySelector("#ud-reinigung-bemerkungen")?.value.trim() || "";
+			container
+				.querySelector("#ud-reinigung-bemerkungen")
+				?.value.trim() || "";
 
 		try {
 			const res = await fetch("/wp-json/ud-reinigung/v1/clean", {
@@ -340,32 +492,35 @@ function initUDReinigung() {
 
 			if (result.success) {
 				console.log("✅ Reinigung gespeichert:", result);
-				if (showToastMsg) showToast("Reinigung erfolgreich gespeichert!");
-				if (result.data && result.data.checklisten) Object.assign(checklisten, result.data.checklisten);
+				if (showToastMsg)
+					showToast("Reinigung erfolgreich gespeichert!");
+				if (result.data && result.data.checklisten)
+					Object.assign(checklisten, result.data.checklisten);
 			}
 		} catch (err) {
 			console.error("❌ Fehler beim Speichern:", err);
-			if (showToastMsg) showToast("Fehler beim Speichern der Reinigung!", true);
+			if (showToastMsg)
+				showToast("Fehler beim Speichern der Reinigung!", true);
 		}
 	}
 
 	// ===========================================================
 	// 🔹 Toast-Meldung
 	// ===========================================================
-function showToast(msg, isError = false) {
-	const toast = document.createElement("div");
-	toast.className = "ud-toast" + (isError ? " ud-toast--error" : " ud-toast--success");
-	toast.textContent = msg;
-	document.body.appendChild(toast);
+	function showToast(msg, isError = false) {
+		const toast = document.createElement("div");
+		toast.className =
+			"ud-toast" + (isError ? " ud-toast--error" : " ud-toast--success");
+		toast.textContent = msg;
+		document.body.appendChild(toast);
 
-	setTimeout(() => {
-		toast.classList.add("ud-toast--visible");
-	}, 10); // kleiner Delay für Transition
+		setTimeout(() => {
+			toast.classList.add("ud-toast--visible");
+		}, 10); // kleiner Delay für Transition
 
-	setTimeout(() => {
-		toast.classList.remove("ud-toast--visible");
-		setTimeout(() => toast.remove(), 300); // nach Animation entfernen
-	}, 2500);
-}
-
+		setTimeout(() => {
+			toast.classList.remove("ud-toast--visible");
+			setTimeout(() => toast.remove(), 300); // nach Animation entfernen
+		}, 2500);
+	}
 }
