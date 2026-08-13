@@ -1,63 +1,71 @@
 # UD Plugin: Reinigung
 
-Digitales Werkzeug für Reinigungsaufgaben in Küchen, Räumen oder Arbeitsbereichen. Es zeigt den Fortschritt in Echtzeit und ermöglicht das einfache Abhaken direkt im Frontend.
+UD Reinigung bildet tagesbezogene Reinigungsaufgaben als strukturierten Arbeitsbereich in einer betrieblichen WordPress-Frontend-Anwendung ab. Mitarbeitende wählen einen Bereich, haken ausgeführte Arbeitsschritte ab und speichern den aktuellen Stand direkt im Frontend.
+
+Ein Fortschrittsring in der gemeinsamen Navigation fasst erledigte und gesamte Aufgaben zusammen. Der vollständige Arbeitsbereich öffnet sich als Modalfenster und stellt die Aufgaben nach Räumen beziehungsweise Funktionsbereichen gegliedert bereit.
 
 ## Funktionen
 
--   **Gutenberg-Block „UD Reinigung“**
-    Anzeige und Steuerung von Reinigungsaufgaben direkt im Frontend – inkl. Statuswechsel (offen, in Arbeit, abgeschlossen).
+- Tagesbezogene Reinigungsdatensätze in WordPress verwalten
+- Aufgaben nach Arbeitsbereichen gliedern
+- Einzelne Arbeitsschritte direkt im Frontend abhaken
+- Aktuellen Stand über geschützte REST-Endpunkte laden und speichern
+- Fortschritt aus erledigten und gesamten Aufgaben berechnen
+- Fortschrittsring in der gemeinsamen Frontend-Navigation anzeigen
+- Reinigungstag mit einem zugehörigen Suppentag verbinden
+- Checklisten und Bemerkungen als strukturierte Metadaten speichern
 
--   **Echtzeit-Synchronisierung (Ably)**
-    Änderungen werden sofort auf allen verbundenen Geräten aktualisiert.
+## Frontend-Ansichten
 
--   **Frontend-Steuerung**
+![Statusanzeige des WordPress-Reinigungsmoduls mit erledigten und gesamten Aufgaben.](./assets/ud-reinigung.webp)
 
-    -   Alle Reinigungsaufgaben werden direkt im Frontend bearbeitet – Aufgaben abhaken, Fortschritt speichern und Status in Echtzeit synchronisieren.
-    -   Farbige Statusanzeige (z. B. Grün = erledigt, Rot = offen)
-    -   Live-Aktualisierung ohne Reload
+Der Zugang zum Reinigungsbereich zeigt den aktuellen Gesamtfortschritt bereits in der gemeinsamen Frontend-Navigation.
 
--   **Technische Merkmale**
-    -   Build mit `@wordpress/scripts` (Webpack 5, SCSS → CSS, ESNext)
-    -   Kompatibel mit Gutenberg ≥ WP 6.7
-    -   FSE-kompatibel, Theme `ulrichdigital_block_theme`
+![Nach Arbeitsbereichen gegliederte Reinigungs-Checkliste mit auswählbaren Aufgaben und Fortschritt.](./assets/ud-reinigung_erfassen.webp)
 
-## Screenshots
+Die Checkliste verbindet Bereiche, einzelne Arbeitsschritte und den Gesamtfortschritt in einer direkt bedienbaren Frontend-Oberfläche.
 
-![Frontend-Ansicht](./assets/ud-reinigung.webp)
-_Der Button zur Reinigung zeigt den aktuellen Fortschritt – erledigte und offene Aufgaben auf einen Blick._
+## Datenstruktur
 
-![Editor-Ansicht](./assets/ud-reinigung_erfassen.webp)
-_Erfassung und Kontrolle der Reinigungsaufgaben – Räume und Arbeitsschritte können direkt abgehakt und kommentiert werden._
+Das Plugin registriert den WordPress-Inhaltstyp `reinigung`. Checklisten und Bemerkungen werden als strukturierte Metadaten des jeweiligen Reinigungstages gespeichert.
 
-## Voraussetzung:
-Das Plugin [UD Reservation](https://github.com/ulrich-digital/ud-reservation) muss aktiv sein, da UD Reinigung dessen Echtzeit-Infrastruktur (Ably-Verbindung und gemeinsame Helper-Funktionen) nutzt.
+Die zentral definierten Aufgaben dienen als gemeinsame Ausgangsstruktur. Beim Laden gleicht das Plugin gespeicherte Daten mit dieser Struktur ab. Ergänzte Aufgaben können dadurch in bestehende Reinigungsdatensätze übernommen werden.
 
+## Frontend-Bedienung
+
+Der Shortcode `[ud_reinigung_button]` erzeugt den Zugang zum Reinigungsbereich und das zugehörige Modalfenster. Das ausgewählte Datum bestimmt, welcher Reinigungsdatensatz geladen oder neu angelegt wird.
+
+REST-Endpunkte verbinden die Frontend-Oberfläche mit den WordPress-Daten. Der Fortschritt wird nach dem Laden und Speichern aus den aktuellen Checklistenwerten berechnet.
+
+## Einordnung in die Anwendung
+
+UD Reinigung und [UD Notes](https://github.com/ulrich-digital/ud-notes) sind eigenständige Module derselben betrieblichen Frontend-Anwendung. Sie verwenden gemeinsame Interaktionsmuster wie Button-Bar, Statusanzeige und Modalfenster, tauschen untereinander jedoch keine Daten aus.
+
+Die Zuordnung zu einem Suppentag setzt den in der zugehörigen Anwendung verwendeten Inhaltstyp `ud_suppentag` voraus. Abhängigkeiten und die gemeinsame Infrastruktur werden in einer geplanten Update-Runde technisch konsolidiert.
 
 ## Installation
 
-1. Repository in den Plugin-Ordner von WordPress kopieren:
-   `/wp-content/plugins/ud-reinigung/`
-2. Plugin im WordPress-Backend aktivieren.
-3. Block **„UD Reinigung“** im Seiten- oder Beitragseditor hinzufügen.
-4. Aufgaben und Verantwortlichkeiten im Backend definieren.
-5. Änderungen erscheinen automatisch auf allen verbundenen Displays.
+1. Den Plugin-Ordner `ud-reinigung` nach `wp-content/plugins/` kopieren.
+2. Die zugehörige Frontend-Anwendung und den Inhaltstyp für Suppentage bereitstellen.
+3. UD Reinigung im WordPress-Backend aktivieren.
+4. Den Shortcode `[ud_reinigung_button]` an der vorgesehenen Stelle der Frontend-Anwendung einfügen.
 
+## Entwicklung
 
+```bash
+npm install
+npm run start
+```
 
-## Anforderungen
+Produktions-Build erstellen:
 
--   WordPress 6.7 oder neuer
--   PHP 8.0 oder höher
--   Aktives Theme `ulrichdigital_block_theme`
--   Optional Ably-API-Key für Echtzeit-Übertragung
-
-
+```bash
+npm run build
+```
 
 ## Autor
 
 [ulrich.digital gmbh](https://ulrich.digital)
-
-
 
 ## Lizenz
 
