@@ -17,13 +17,9 @@ Ein Fortschrittsring in der gemeinsamen Navigation fasst erledigte und gesamte A
 
 ## Frontend-Ansichten
 
-![Statusanzeige des WordPress-Reinigungsmoduls mit erledigten und gesamten Aufgaben.](./assets/ud-reinigung.webp)
+![Frontend-Modul in WordPress mit einer nach Arbeitsbereichen gegliederten Reinigungs-Checkliste, abgehakten Aufgaben und sichtbarem Gesamtfortschritt.](./assets/betriebliche-ablaufe-direkt-im-frontend-organisieren-reinigung.webp)
 
-Der Zugang zum Reinigungsbereich zeigt den aktuellen Gesamtfortschritt bereits in der gemeinsamen Frontend-Navigation.
-
-![Nach Arbeitsbereichen gegliederte Reinigungs-Checkliste mit auswählbaren Aufgaben und Fortschritt.](./assets/ud-reinigung_erfassen.webp)
-
-Die Checkliste verbindet Bereiche, einzelne Arbeitsschritte und den Gesamtfortschritt in einer direkt bedienbaren Frontend-Oberfläche.
+Die Checkliste verbindet Bereiche, einzelne Arbeitsschritte und den Gesamtfortschritt in einer direkt bedienbaren Frontend-Oberfläche. Der Zugang zum Reinigungsbereich zeigt den aktuellen Stand bereits in der gemeinsamen Navigation.
 
 ## Datenstruktur
 
